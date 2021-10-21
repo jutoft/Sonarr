@@ -1,0 +1,1067 @@
+﻿{
+  "security": [
+    {
+      "apiKey": []
+    }
+  ],
+  "paths": {
+    "/settings": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GetTriblerSettingsResponse"
+            }
+          }
+        },
+        "parameters": [],
+        "tags": [
+          "General"
+        ],
+        "summary": "Return all the session settings that can be found in Tribler.",
+        "description": "This endpoint returns all the session settings that can be found in Tribler.\n\n It also returns the runtime-determined ports, i.e. the ports for the SOCKS5 servers. Please note that a port with a value of -1 in the settings means that the port is randomly assigned at startup.",
+        "produces": [
+          "application/json"
+        ]
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/UpdateTriblerSettingsResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "body",
+            "required": false,
+            "name": "body",
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/UpdateTriblerSettingsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "General"
+        ],
+        "summary": "Update Tribler settings.",
+        "produces": [
+          "application/json"
+        ]
+      }
+    },
+    "/downloads": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/DownloadsResponse"
+            }
+          }
+        },
+        "tags": [
+          "Libtorrent"
+        ],
+        "operationId": "getDownloads",
+        "summary": "Return all downloads, both active and inactive",
+        "description": "This endpoint returns all downloads in Tribler, both active and inactive. The progress is a number ranging from 0 to 1, indicating the progress of the specific state (downloading, checking etc). The download speeds have the unit bytes/sec. The size of the torrent is given in bytes. The estimated time assumed is given in seconds.\n\nDetailed information about peers and pieces is only requested when the get_peers and/or get_pieces flag is set. Note that setting this flag has a negative impact on performance and should only be used in situations where this data is required. ",
+        "produces": [
+          "application/json"
+        ]
+      },
+      "put": {
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/AddDownloadResponse"
+            },
+            "examples": {
+              "started": true,
+              "infohash": "4344503b7e797ebf31582327a5baae35b11bda01"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "body",
+            "required": false,
+            "name": "body",
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/AddDownloadRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Libtorrent"
+        ],
+        "operationId": "addDownload",
+        "summary": "Start a download from a provided URI.",
+        "produces": [
+          "application/json"
+        ]
+      }
+    },
+    "/downloads/{infohash}": {
+      "delete": {
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/DeleteDownloadResponse"
+            },
+            "examples": {
+              "removed": true,
+              "infohash": "4344503b7e797ebf31582327a5baae35b11bda01"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "infohash",
+            "description": "Infohash of the download to remove",
+            "type": "string",
+            "required": true
+          },
+          {
+            "in": "body",
+            "required": false,
+            "name": "body",
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/RemoveDownloadRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Libtorrent"
+        ],
+        "summary": "Remove a specific download.",
+        "operationId": "removeDownload",
+        "produces": [
+          "application/json"
+        ]
+      },
+      "patch": {
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/UpdateDownloadResponse"
+            },
+            "examples": {
+              "modified": true,
+              "infohash": "4344503b7e797ebf31582327a5baae35b11bda01"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "infohash",
+            "description": "Infohash of the download to update",
+            "type": "string",
+            "required": true
+          },
+          {
+            "in": "body",
+            "required": false,
+            "name": "body",
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/UpdateDownloadRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Libtorrent"
+        ],
+        "summary": "Update a specific download.",
+        "produces": [
+          "application/json"
+        ]
+      }
+    },
+    "/downloads/{infohash}/torrent": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "The torrent"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "infohash",
+            "description": "Infohash of the download from which to get the .torrent file",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "tags": [
+          "Libtorrent"
+        ],
+        "summary": "Return the .torrent file associated with the specified download.",
+        "produces": [
+          "application/json"
+        ]
+      }
+    },
+    "/downloads/{infohash}/files": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/GetFilesResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "infohash",
+            "description": "Infohash of the download to from which to get file information",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "tags": [
+          "Libtorrent"
+        ],
+        "summary": "Return file information of a specific download.",
+        "produces": [
+          "application/json"
+        ]
+      }
+    },
+    "/downloads/{infohash}/stream/{fileindex}": {
+      "get": {
+        "responses": {
+          "206": {
+            "description": "Contents of the stream"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "infohash",
+            "description": "Infohash of the download to stream",
+            "type": "string",
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "fileindex",
+            "description": "The fileindex to stream",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "tags": [
+          "Libtorrent"
+        ],
+        "summary": "Stream the contents of a file that is being downloaded.",
+        "produces": [
+          "application/json"
+        ]
+      }
+    },
+    "/search": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/SearchResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "first",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "description": "Limit the range of the query"
+          },
+          {
+            "in": "query",
+            "name": "sort_desc",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "type": "string",
+            "description": "Sorts results in forward or backward, based on column name (e.g. \"id\" vs \"-id\")"
+          },
+          {
+            "in": "query",
+            "name": "remote_query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "last",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "description": "Limit the range of the query"
+          },
+          {
+            "in": "query",
+            "name": "metadata_type",
+            "required": false,
+            "collectionFormat": "multi",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Limits query to certain metadata types (e.g. \"torrent\" or \"channel\")"
+          },
+          {
+            "in": "query",
+            "name": "txt_filter",
+            "required": false,
+            "type": "string",
+            "description": "FTS search on the chosen word* terms"
+          }
+        ],
+        "tags": [
+          "Metadata"
+        ],
+        "summary": "Perform a search for a given query.",
+        "produces": [
+          "application/json"
+        ]
+      }
+    },
+    "/search/completions": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/CompletionsResponse"
+            },
+            "examples": {
+              "completions": [
+                "pioneer one",
+                "pioneer movie"
+              ]
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "description": "Search query",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "tags": [
+          "Metadata"
+        ],
+        "summary": "Return auto-completion suggestions for a given query.",
+        "produces": [
+          "application/json"
+        ]
+      }
+    },
+    "/remote_query": {
+      "put": {
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/RemoteSearchResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "first",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "description": "Limit the range of the query"
+          },
+          {
+            "in": "query",
+            "name": "channel_pk",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "sort_desc",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "type": "string",
+            "description": "Sorts results in forward or backward, based on column name (e.g. \"id\" vs \"-id\")"
+          },
+          {
+            "in": "query",
+            "name": "remote_query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "last",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "description": "Limit the range of the query"
+          },
+          {
+            "in": "query",
+            "name": "uuid",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "metadata_type",
+            "required": false,
+            "collectionFormat": "multi",
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Limits query to certain metadata types (e.g. \"torrent\" or \"channel\")"
+          },
+          {
+            "in": "query",
+            "name": "txt_filter",
+            "required": false,
+            "type": "string",
+            "description": "FTS search on the chosen word* terms"
+          },
+          {
+            "in": "query",
+            "name": "hide_xxx",
+            "required": false,
+            "type": "boolean",
+            "description": "Toggles xxx filter"
+          },
+          {
+            "in": "query",
+            "name": "exclude_deleted",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Metadata"
+        ],
+        "summary": "Perform a search for a given query.",
+        "produces": [
+          "application/json"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Tribler REST API documentation",
+    "version": "7.10.0"
+  },
+  "swagger": "2.0",
+  "definitions": {
+    "GetTriblerSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "settings": {
+          "type": "object",
+          "properties": {
+            "general": {
+              "type": "object",
+              "properties": {
+                "log_dir": {
+                  "type": "string"
+                },
+                "version": {
+                  "type": "string"
+                },
+                "version_checker_enabled": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "tunnel_community": {
+              "type": "object",
+              "properties": {
+                "exitnode_enabled": {
+                  "type": "boolean"
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "socks5_listen_ports": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "random_slots": {
+                  "type": "integer"
+                },
+                "competing_slots": {
+                  "type": "number"
+                },
+                "testnet": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "market_community": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "string"
+                }
+              }
+            },
+            "dht": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "download_defaults": {
+              "type": "object",
+              "properties": {
+                "anonymity_enabled": {
+                  "type": "boolean"
+                },
+                "number_hops": {
+                  "type": "integer"
+                },
+                "safeseeding_enabled": {
+                  "type": "boolean"
+                },
+                "saveas": {
+                  "type": "string"
+                },
+                "seeding_mode": {
+                  "type": "string",
+                  "enum": [
+                    "ratio",
+                    "forever",
+                    "time",
+                    "never"
+                  ]
+                },
+                "seeding_ratio": {
+                  "type": "number",
+                  "format": "double",
+                  "description": "Seeding ratio download/upload"
+                },
+                "seeding_time": {
+                  "type": "number",
+                  "description": "Seeding time in seconds"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "UpdateTriblerSettingsRequest": {
+      "type": "object",
+      "properties": {}
+    },
+    "UpdateTriblerSettingsResponse": {
+      "type": "object",
+      "properties": {
+        "modified": {
+          "type": "boolean",
+          "description": ""
+        }
+      }
+    },
+    "Download": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": ""
+        },
+        "progress": {
+          "type": "number",
+          "format": "float",
+          "description": ""
+        },
+        "anon_download": {
+          "type": "boolean",
+          "description": ""
+        },
+        "availability": {
+          "type": "number",
+          "format": "float",
+          "description": ""
+        },
+        "eta": {
+          "type": "number",
+          "format": "double",
+          "description": ""
+        },
+        "total_pieces": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "num_seeds": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "total_up": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "status": {
+          "type": "string",
+          "description": "",
+          "enum": [
+            "DLSTATUS_WAITING4HASHCHECK",
+            "DLSTATUS_HASHCHECKING",
+            "DLSTATUS_METADATA",
+            "DLSTATUS_DOWNLOADING",
+            "DLSTATUS_SEEDING",
+            "DLSTATUS_STOPPED",
+            "DLSTATUS_ALLOCATING_DISKSPACE"
+          ]
+        },
+        "infohash": {
+          "type": "string",
+          "description": ""
+        },
+        "ratio": {
+          "type": "number",
+          "format": "float",
+          "description": ""
+        },
+        "vod_mode": {
+          "type": "boolean",
+          "description": ""
+        },
+        "time_added": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "max_upload_speed": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "max_download_speed": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "hops": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "safe_seeding": {
+          "type": "boolean",
+          "description": ""
+        },
+        "error": {
+          "type": "string",
+          "description": ""
+        },
+        "total_down": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "vod_prebuffering_progress": {
+          "type": "number",
+          "format": "float",
+          "description": ""
+        },
+        "trackers": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "description": "url of tracker"
+              },
+              "peers": {
+                "type": "int64",
+                "description": "number of peers"
+              },
+              "status": {
+                "type": "string",
+                "description": "If the tracker is working or not."
+              }
+            }
+          }
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64",
+          "description": ""
+        },
+        "peers": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "string"
+          }
+        },
+        "destination": {
+          "type": "string",
+          "description": ""
+        },
+        "speed_down": {
+          "type": "number",
+          "format": "float",
+          "description": ""
+        },
+        "speed_up": {
+          "type": "number",
+          "format": "float",
+          "description": ""
+        },
+        "vod_prebuffering_progress_consec": {
+          "type": "number",
+          "format": "float",
+          "description": ""
+        },
+        "files": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "string"
+          }
+        },
+        "num_peers": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        }
+      }
+    },
+    "DownloadsResponse": {
+      "type": "object",
+      "properties": {
+        "downloads": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Download"
+          }
+        }
+      }
+    },
+    "AddDownloadRequest": {
+      "type": "object",
+      "properties": {
+        "anon_hops": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Number of hops for the anonymous download. No hops is equivalent to a plain download"
+        },
+        "safe_seeding": {
+          "type": "boolean",
+          "description": "Whether the seeding of the download should be anonymous or not"
+        },
+        "destination": {
+          "type": "string",
+          "description": "the download destination path of the torrent"
+        },
+        "uri": {
+          "type": "string",
+          "description": "The URI of the torrent file that should be downloaded. This URI can either represent a file location, a magnet link or a HTTP(S) url."
+        }
+      },
+      "required": [
+        "uri"
+      ]
+    },
+    "AddDownloadResponse": {
+      "type": "object",
+      "properties": {
+        "infohash": {
+          "type": "string",
+          "description": ""
+        },
+        "started": {
+          "type": "boolean",
+          "description": ""
+        }
+      }
+    },
+    "RemoveDownloadRequest": {
+      "type": "object",
+      "properties": {
+        "remove_data": {
+          "type": "boolean",
+          "description": "Whether or not to remove the associated data"
+        }
+      }
+    },
+    "DeleteDownloadResponse": {
+      "type": "object",
+      "properties": {
+        "removed": {
+          "type": "boolean",
+          "description": ""
+        },
+        "infohash": {
+          "type": "string",
+          "description": ""
+        }
+      }
+    },
+    "UpdateDownloadRequest": {
+      "type": "object",
+      "properties": {
+        "anon_hops": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The anonymity of a download can be changed at runtime by passing the anon_hops parameter, however, this must be the only parameter in this request."
+        },
+        "selected_files": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "state": {
+          "type": "string",
+          "description": "State parameter to be passed to modify the state of the download (resume/stop/recheck)"
+        }
+      }
+    },
+    "UpdateDownloadResponse": {
+      "type": "object",
+      "properties": {
+        "modified": {
+          "type": "boolean",
+          "description": ""
+        },
+        "infohash": {
+          "type": "string",
+          "description": ""
+        }
+      }
+    },
+    "File": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "integer",
+          "format": "int64",
+          "description": ""
+        },
+        "index": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "name": {
+          "type": "string",
+          "description": ""
+        },
+        "progress": {
+          "type": "number",
+          "format": "float",
+          "description": ""
+        },
+        "included": {
+          "type": "boolean",
+          "description": ""
+        }
+      }
+    },
+    "GetFilesResponse": {
+      "type": "object",
+      "properties": {
+        "files": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "$ref": "#/definitions/File"
+          }
+        }
+      }
+    },
+    "Torrent": {
+      "type": "object",
+      "properties": {
+        "size": {
+          "type": "integer",
+          "format": "int64",
+          "description": ""
+        },
+        "infohash": {
+          "type": "string",
+          "description": ""
+        },
+        "num_leechers": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "num_seeders": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "description": ""
+        },
+        "public_key": {
+          "type": "string",
+          "description": ""
+        },
+        "name": {
+          "type": "string",
+          "description": ""
+        },
+        "last_tracker_check": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "relevance_score": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "category": {
+          "type": "string",
+          "description": ""
+        },
+        "commit_status": {
+          "type": "integer",
+          "format": "int32",
+          "description": ""
+        },
+        "date": {
+          "type": "integer",
+          "format": "int64",
+          "nullable": true,
+          "description": "Creation date for torrent"
+        },
+        "updated": {
+          "type": "integer",
+          "format": "int64",
+          "nullable": true,
+          "description": "Latest change to Torrent in tribler network"
+        },
+        "type": {
+          "type": "string",
+          "description": ""
+        }
+      }
+    },
+    "SearchResponse": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "$ref": "#/definitions/Torrent"
+          }
+        },
+        "chant_dirty": {
+          "type": "boolean",
+          "description": ""
+        },
+        "first": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Paged query, the first"
+        },
+        "last": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Paged query, the last item"
+        },
+        "sort_by": {
+          "type": "string",
+          "description": "What field to sort by"
+        },
+        "sort_desc": {
+          "type": "boolean",
+          "description": "Sort direction"
+        }
+      }
+    },
+    "CompletionsResponse": {
+      "type": "object",
+      "properties": {
+        "completions": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "RemoteSearchResponse": {
+      "type": "object",
+      "properties": {
+        "request_uuid": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "apiKey": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "X-Api-Key"
+    }
+  }
+}

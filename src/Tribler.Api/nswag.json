@@ -1,0 +1,17 @@
+{
+  "runtime": "Default",
+  "documentGenerator": {
+    "fromDocument": {
+      "json": "OpenAPIs/swagger.json"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "output": "TriblerApiClient.g.cs",
+      "className": "{controller}TriblerApiClient",
+      "operationGenerationMode": "SingleClientFromOperationId",
+      "generateClientInterfaces": true,
+      "namespace": "Tribler.Api"
+    }
+  }
+}

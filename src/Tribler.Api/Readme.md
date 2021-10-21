@@ -1,0 +1,1 @@
+﻿C:\Users\Jesper\.nuget\packages\nswag.msbuild\13.13.2\build\../tools/Win/NSwag.exe run nswag.json

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text.RegularExpressions;
 using NzbDrone.Common.Disk;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
@@ -8,15 +7,12 @@ using FluentValidation.Results;
 using NzbDrone.Core.MediaFiles.TorrentInfo;
 using NzbDrone.Core.RemotePathMappings;
 using Tribler.Api;
-using System.Net.Http.Headers;
 using System.Collections.Generic;
 using System.Linq;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Validation;
 using MonoTorrent;
-using System.Net;
-using NzbDrone.Common.Serializer;
 
 namespace NzbDrone.Core.Download.Clients.Tribler
 {
@@ -24,7 +20,9 @@ namespace NzbDrone.Core.Download.Clients.Tribler
 
     public class TriblerDownloadClient : TorrentClientBase<TriblerDownloadSettings>
     {
-        public TriblerDownloadClient(ITorrentFileInfoReader torrentFileInfoReader,
+        private readonly ITriblerDownloadClientProxy _proxy;
+
+        public TriblerDownloadClient(ITriblerDownloadClientProxy triblerDownloadClientProxy, ITorrentFileInfoReader torrentFileInfoReader,
                             IHttpClient httpClient,
                             IConfigService configService,
                             IDiskProvider diskProvider,
@@ -32,80 +30,23 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                             Logger logger)
             : base(torrentFileInfoReader, httpClient, configService, diskProvider, remotePathMappingService, logger)
         {
+            this._proxy = triblerDownloadClientProxy;
         }
 
         public override string Name => "Tribler";
 
         public override bool PreferTorrentFile => false;
 
-        public string GetBaseUrl(string relativePath = null)
-        {
-            var baseUrl = HttpRequestBuilder.BuildBaseUrl(Settings.UseSsl, Settings.Host, Settings.Port, Settings.UrlBase);
-            baseUrl = HttpUri.CombinePath(baseUrl, relativePath);
-
-            return baseUrl;
-        }
-
-        private HttpRequestBuilder getRequestBuilder(string relativePath = null)
-        {
-            var requestBuilder = new HttpRequestBuilder(GetBaseUrl(relativePath))
-                .Accept(HttpAccept.Json);
-
-            requestBuilder.Headers.Add("X-Api-Key", Settings.ApiKey);
-
-            requestBuilder.LogResponseContent = true;
-
-            return requestBuilder;
-        }
-
-        private T ProcessRequest<T>(HttpRequest requestBuilder) where T : new()
-        {
-            var httpRequest = requestBuilder;
-
-            HttpResponse response;
-
-            _logger.Debug("Url: {0}", httpRequest.Url);
-
-            try
-            {
-                response = _httpClient.Execute(httpRequest);
-            }
-            catch (HttpException ex)
-            {
-                if (ex.Response.StatusCode == HttpStatusCode.Unauthorized)
-                {
-                    throw new DownloadClientAuthenticationException("Unauthorized - AuthToken is invalid", ex);
-                }
-
-                throw new DownloadClientUnavailableException("Unable to connect to Tribler. Status Code: {0}", ex.Response.StatusCode, ex);
-            }
-
-            return Json.Deserialize<T>(response.Content);
-        }
-
-        private T ProcessRequest<T>(HttpRequestBuilder requestBuilder) where T : new()
-        {
-            return ProcessRequest<T>(requestBuilder.Build());
-        }
-
-        private GetTriblerSettingsResponse getConfig()
-        {
-            var configRequest = getRequestBuilder("settings");
-            return ProcessRequest<GetTriblerSettingsResponse>(configRequest);
-        }
-
         public override IEnumerable<DownloadClientItem> GetItems()
         {
-            var configAsync = getConfig();
+            var configAsync = _proxy.GetConfig(Settings);
 
             var items = new List<DownloadClientItem>();
 
-            var downloadRequest = getRequestBuilder("downloads");
-            var downloads = ProcessRequest<DownloadsResponse>(downloadRequest);
+            var downloads = _proxy.GetDownloads(Settings);
 
-            foreach (var download in downloads.Downloads)
+            foreach (var download in downloads)
             {
-
                 // If totalsize == 0 the torrent is a magnet downloading metadata
                 if (download.Size == null || download.Size == 0) continue;
 
@@ -117,14 +58,15 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                 item.DownloadClientInfo = DownloadClientItemClientInfo.FromDownloadClient(this);
 
                 // some concurrency could make this faster.
-                var filesRequest = getRequestBuilder("downloads/" + download.Infohash + "/files");
-                var files = ProcessRequest<GetFilesResponse>(filesRequest).Files;
+                var files = _proxy.GetDownloadFiles(Settings, download);
 
                 item.OutputPath = new OsPath(download.Destination);
+
                 if (files.Count == 1)
                 {
                     item.OutputPath += files.First().Name;
-                } else
+                }
+                else
                 {
                     item.OutputPath += item.Title;
                 }
@@ -150,14 +92,12 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                 //Failed = 4,
                 //Warning = 5
 
-
                 //Queued = 0,
                 //Completed = 3,
                 //Downloading = 2,
 
                 // Paused is guesstimated
                 //Paused = 1,
-
 
                 switch (download.Status)
                 {
@@ -174,6 +114,11 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                     case DownloadStatus.DLSTATUS_STOPPED:
                         item.Status = DownloadItemStatus.Completed;
                         break;
+                    default: // new status in API? default to downloading
+                        item.Message = "Unknown download state: " + download.Status;
+                        _logger.Info(item.Message);
+                        item.Status = DownloadItemStatus.Downloading;
+                        break;
                 }
 
                 // override status' if completed but progress is not finished
@@ -181,7 +126,6 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                 {
                     item.Status = DownloadItemStatus.Paused;
                 }
-
 
                 // override status if error is set
                 if (download.Error != null && download.Error.Length > 0)
@@ -238,25 +182,12 @@ namespace NzbDrone.Core.Download.Clients.Tribler
 
         public override void RemoveItem(DownloadClientItem item, bool deleteData)
         {
-            //_proxy.RemoveTorrent(item.DownloadId.ToLower(), deleteData, Settings);
-            var deleteDownloadRequestObject = new RemoveDownloadRequest
-            {
-                Remove_data = deleteData
-            };
-
-            var deleteRequestBuilder = getRequestBuilder("downloads/" + item.DownloadId.ToLower());
-            deleteRequestBuilder.Method = HttpMethod.DELETE;
-
-            // manually set content of delete request.
-            var deleteRequest = deleteRequestBuilder.Build();
-            deleteRequest.SetContent(Json.ToJson(deleteDownloadRequestObject));
-
-            ProcessRequest<DeleteDownloadResponse>(deleteRequest);
+            _proxy.RemoveDownload(Settings, item, deleteData);
         }
 
         public override DownloadClientInfo GetStatus()
         {
-            var config = getConfig();
+            var config = _proxy.GetConfig(Settings);
             var destDir = config.Settings.Download_defaults.Saveas;
 
             if (Settings.TvCategory.IsNotNullOrWhiteSpace())
@@ -279,27 +210,13 @@ namespace NzbDrone.Core.Download.Clients.Tribler
             addDownloadRequestObject.Safe_seeding = Settings.SafeSeeding;
             addDownloadRequestObject.Anon_hops = Settings.AnonymityLevel;
 
-            // run hash through InfoHash class to ensure the correct casing.
-            var addDownloadRequestBuilder = getRequestBuilder("downloads");
-            addDownloadRequestBuilder.Method = HttpMethod.PUT;
-
-            // manually set content of delete request.
-            var addDownloadRequest = addDownloadRequestBuilder.Build();
-            addDownloadRequest.SetContent(Json.ToJson(addDownloadRequestObject));
-
-            string infoHashAsString = ProcessRequest<AddDownloadResponse>(addDownloadRequest).Infohash;
-
-            var infoHash = MonoTorrent.InfoHash.FromHex(infoHashAsString);
-            return infoHash.ToHex();
+            return _proxy.AddFromMagnetLink(Settings, addDownloadRequestObject);
         }
 
         protected override string AddFromTorrentFile(RemoteEpisode remoteEpisode, string hash, string filename, byte[] fileContent)
         {
             // tribler api currently do not support recieving a torrent file direcly.
-            // instead extract infohash and generate a magnet uri.
-
-            var torrentFile = MonoTorrent.Torrent.Load(fileContent);
-            return AddFromMagnetLink(remoteEpisode, hash, string.Format("magnet:?xt=urn:btih:{0}&dn={1}", torrentFile.InfoHash, filename));
+            throw new NotSupportedException("Tribler download client only support magnet links currently");
         }
 
         protected override void Test(List<ValidationFailure> failures)
@@ -318,7 +235,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
 
             if (!Settings.TvCategory.IsNotNullOrWhiteSpace()) return null;
 
-            var config = getConfig();
+            var config = _proxy.GetConfig(Settings);
             var destDir = config.Settings.Download_defaults.Saveas;
 
             return $"{destDir.TrimEnd('/')}/{Settings.TvCategory}";

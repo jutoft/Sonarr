@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Net;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using NzbDrone.Common.Http;
 using NzbDrone.Core.Indexers.Exceptions;
 using NzbDrone.Core.Parser.Model;
 using Tribler.Api;
@@ -43,7 +41,6 @@ namespace NzbDrone.Core.Indexers.Tribler
 
             foreach (var torrent in searchResponse.Results)
             {
-                // currently i have no idea how to fill out TvdbId, TvRageId, ImdbId
                 var release = new TorrentInfo
                 {
                     Title = torrent.Name,

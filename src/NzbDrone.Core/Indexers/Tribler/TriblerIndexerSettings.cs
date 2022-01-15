@@ -1,9 +1,6 @@
-﻿using System.Text.RegularExpressions;
-using FluentValidation;
+﻿using FluentValidation;
 using NzbDrone.Core.Annotations;
-using NzbDrone.Core.ThingiProvider;
 using NzbDrone.Core.Validation;
-using NzbDrone.Common.Extensions;
 
 namespace NzbDrone.Core.Indexers.Tribler
 {
@@ -26,10 +23,10 @@ namespace NzbDrone.Core.Indexers.Tribler
             BaseUrl = "http://localhost:52194";
         }
 
-        [FieldDefinition(0, Label = "BaseUrl", Type = FieldType.Textbox, HelpText = "The url for the tribler rest interface, eg http://[host]:[port]/[urlBase], defaults to 'http://localhost:52194'")]
+        [FieldDefinition(1, Label = "BaseUrl", Type = FieldType.Textbox, HelpText = "The url for the tribler rest interface, eg http://[host]:[port]/[urlBase], defaults to 'http://localhost:52194'")]
         public string BaseUrl { get; set; }
 
-        [FieldDefinition(4, Label = "ApiKey", Type = FieldType.Textbox, Privacy = PrivacyLevel.Password, HelpText = "Api key, found in %APPDATA%\\Roaming\\.Tribler\\7.10\\triblerd.conf, the api key is [api].key, NOT [http_api].key")]
+        [FieldDefinition(2, Label = "ApiKey", Type = FieldType.Textbox, Privacy = PrivacyLevel.Password, HelpText = "Api key, found in %APPDATA%\\Roaming\\.Tribler\\7.10\\triblerd.conf, the api key is [api].key, NOT [http_api].key")]
         public string ApiKey { get; set; }
 
         public NzbDroneValidationResult Validate()

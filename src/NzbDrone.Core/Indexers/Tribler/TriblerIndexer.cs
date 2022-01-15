@@ -1,22 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.Http.Headers;
 using FluentValidation.Results;
 using NLog;
-using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Http;
-using NzbDrone.Common.Serializer;
 using NzbDrone.Core.Configuration;
-using NzbDrone.Core.Exceptions;
-using NzbDrone.Core.Http.CloudFlare;
 using NzbDrone.Core.Indexers.Exceptions;
-using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Validation;
-using Tribler.Api;
 
 namespace NzbDrone.Core.Indexers.Tribler
 {
@@ -74,7 +66,6 @@ namespace NzbDrone.Core.Indexers.Tribler
                 {
                     failures.Add(new ValidationFailure("search", "returned no results"));
                 }
-
             }
             catch (ApiKeyException ex)
             {

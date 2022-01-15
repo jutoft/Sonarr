@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using NzbDrone.Common.Http;
-using NzbDrone.Common.Serializer;
 using NzbDrone.Core.IndexerSearch.Definitions;
-using NzbDrone.Core.Parser.Model;
 
 namespace NzbDrone.Core.Indexers.Tribler
 {
@@ -14,11 +13,7 @@ namespace NzbDrone.Core.Indexers.Tribler
         // Tribler currently has no rss support.
         public virtual IndexerPageableRequestChain GetRecentRequests()
         {
-            var pageableRequests = new IndexerPageableRequestChain();
-
-            pageableRequests.Add(GetRequest("*")); // search for anything
-
-            return pageableRequests;
+            throw new NotSupportedException("Getting recent items is not yet supported");
         }
 
         public virtual IndexerPageableRequestChain GetSearchRequests(AnimeEpisodeSearchCriteria searchCriteria)
@@ -122,6 +117,5 @@ namespace NzbDrone.Core.Indexers.Tribler
 
             yield return new IndexerRequest(requestBuilder.Build());
         }
-
     }
 }

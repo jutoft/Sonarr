@@ -6,18 +6,16 @@ using NLog;
 using FluentValidation.Results;
 using NzbDrone.Core.MediaFiles.TorrentInfo;
 using NzbDrone.Core.RemotePathMappings;
-using Tribler.Api;
 using System.Collections.Generic;
 using System.Linq;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.Validation;
 using MonoTorrent;
+using NzbDrone.Core.Indexers.Tribler;
 
 namespace NzbDrone.Core.Download.Clients.Tribler
 {
-    using TriblerApi = global::Tribler.Api;
-
     public class TriblerDownloadClient : TorrentClientBase<TriblerDownloadSettings>
     {
         private readonly ITriblerDownloadClientProxy _proxy;
@@ -49,6 +47,9 @@ namespace NzbDrone.Core.Download.Clients.Tribler
             {
                 // If totalsize == 0 the torrent is a magnet downloading metadata
                 if (download.Size == null || download.Size == 0) continue;
+
+                // skip channel downloads
+                if (download.ChannelDownload == true) continue;
 
                 // skip channel downloads
                 if (download.ChannelDownload == true) continue;
@@ -106,6 +107,8 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                 {
                     case DownloadStatus.DLSTATUS_HASHCHECKING:
                     case DownloadStatus.DLSTATUS_WAITING4HASHCHECK:
+                    case DownloadStatus.DLSTATUS_CIRCUITS:
+                    case DownloadStatus.DLSTATUS_EXIT_NODES:
                     case DownloadStatus.DLSTATUS_DOWNLOADING:
                         item.Status = DownloadItemStatus.Downloading;
                         break;
@@ -116,6 +119,9 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                     case DownloadStatus.DLSTATUS_SEEDING:
                     case DownloadStatus.DLSTATUS_STOPPED:
                         item.Status = DownloadItemStatus.Completed;
+                        break;
+                    case DownloadStatus.DLSTATUS_STOPPED_ON_ERROR:
+                        item.Status = DownloadItemStatus.Failed;
                         break;
                     default: // new status in API? default to downloading
                         item.Message = "Unknown download state: " + download.Status;
@@ -151,7 +157,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         /**
          * this basically checks if torrent is stopped because of seeding has finished
          */
-        protected bool HasReachedSeedLimit(TriblerApi.Download torrent, GetTriblerSettingsResponse config)
+        protected bool HasReachedSeedLimit(Download torrent, GetTriblerSettingsResponse config)
         {
             // if download is still running then it's not finished.
             if (torrent.Status != DownloadStatus.DLSTATUS_STOPPED)

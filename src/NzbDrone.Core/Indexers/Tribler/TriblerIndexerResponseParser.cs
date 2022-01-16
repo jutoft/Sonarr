@@ -4,7 +4,6 @@ using System.Net;
 using Newtonsoft.Json;
 using NzbDrone.Core.Indexers.Exceptions;
 using NzbDrone.Core.Parser.Model;
-using Tribler.Api;
 
 namespace NzbDrone.Core.Indexers.Tribler
 {

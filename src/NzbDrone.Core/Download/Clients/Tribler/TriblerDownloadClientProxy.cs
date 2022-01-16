@@ -1,19 +1,17 @@
 ﻿using NLog;
 using NzbDrone.Common.Http;
 using NzbDrone.Common.Serializer;
+using NzbDrone.Core.Indexers.Tribler;
 using System.Collections.Generic;
 using System.Net;
-using Tribler.Api;
 
 namespace NzbDrone.Core.Download.Clients.Tribler
 {
-    using TriblerApi = global::Tribler.Api;
-
     public interface ITriblerDownloadClientProxy
     {
-        ICollection<TriblerApi.Download> GetDownloads(TriblerDownloadSettings settings);
+        ICollection<Download> GetDownloads(TriblerDownloadSettings settings);
 
-        ICollection<File> GetDownloadFiles(TriblerDownloadSettings settings, TriblerApi.Download downloadItem);
+        ICollection<File> GetDownloadFiles(TriblerDownloadSettings settings, Download downloadItem);
 
         GetTriblerSettingsResponse GetConfig(TriblerDownloadSettings settings);
 
@@ -89,13 +87,13 @@ namespace NzbDrone.Core.Download.Clients.Tribler
             return ProcessRequest<GetTriblerSettingsResponse>(configRequest);
         }
 
-        public ICollection<File> GetDownloadFiles(TriblerDownloadSettings settings, TriblerApi.Download downloadItem)
+        public ICollection<File> GetDownloadFiles(TriblerDownloadSettings settings, Download downloadItem)
         {
             var filesRequest = getRequestBuilder(settings, "downloads/" + downloadItem.Infohash + "/files");
             return ProcessRequest<GetFilesResponse>(filesRequest).Files;
         }
 
-        public ICollection<TriblerApi.Download> GetDownloads(TriblerDownloadSettings settings)
+        public ICollection<Download> GetDownloads(TriblerDownloadSettings settings)
         {
             var downloadRequest = getRequestBuilder(settings, "downloads");
             var downloads = ProcessRequest<DownloadsResponse>(downloadRequest);

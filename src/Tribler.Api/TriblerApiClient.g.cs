@@ -130,8 +130,9 @@ namespace Tribler.Api
     
         [Newtonsoft.Json.JsonProperty("num_peers", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Num_peers { get; set; }
-    
-    
+
+        [Newtonsoft.Json.JsonProperty("channel_download", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? ChannelDownload { get; set; }
     }
     
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.5.2.0 (Newtonsoft.Json v11.0.0.0)")]

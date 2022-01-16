@@ -50,6 +50,9 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                 // If totalsize == 0 the torrent is a magnet downloading metadata
                 if (download.Size == null || download.Size == 0) continue;
 
+                // skip channel downloads
+                if (download.ChannelDownload == true) continue;
+
                 var item = new DownloadClientItem();
                 item.DownloadId = InfoHash.FromHex(download.Infohash).ToHex();
                 //item.Category = Settings.TvCategory;

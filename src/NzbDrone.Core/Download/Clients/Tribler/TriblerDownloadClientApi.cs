@@ -1,4 +1,3 @@
-﻿
 namespace NzbDrone.Core.Download.Clients.Tribler
 {
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.5.2.0 (Newtonsoft.Json v11.0.0.0)")]
@@ -255,5 +254,4 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         [Newtonsoft.Json.JsonProperty("files", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<File> Files { get; set; }
     }
-
 }

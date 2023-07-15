@@ -6,65 +6,48 @@ using NLog;
 using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Indexers.Exceptions;
+using NzbDrone.Core.IndexerSearch.Definitions;
 using NzbDrone.Core.Parser;
 using NzbDrone.Core.Parser.Model;
-using NzbDrone.Core.Validation;
 
 namespace NzbDrone.Core.Indexers.Tribler
 {
-    public class TriblerIndexer : HttpIndexerBase<TriblerIndexerSettings>
+    public class TriblerIndexer : IndexerBase<TriblerIndexerSettings>
     {
+        private ITriblerIndexerRequestGenerator _requestGenerator;
+
         public override string Name => "Tribler";
 
         public override DownloadProtocol Protocol => DownloadProtocol.Torrent;
 
-        // TODO: Consider using channels as rss feed.
-        public override bool SupportsRss => false;
+        public override bool SupportsRss => true;
         public override bool SupportsSearch => true;
 
-        public override int PageSize => 50;
-
-        // this is not a public service so we do no not have to handle rate limitations.
-        public override TimeSpan RateLimit => TimeSpan.FromSeconds(0);
-
-        public TriblerIndexer(IHttpClient httpClient, IIndexerStatusService indexerStatusService, IConfigService configService, IParsingService parsingService, Logger logger)
-            : base(httpClient, indexerStatusService, configService, parsingService, logger)
+        public TriblerIndexer(ITriblerIndexerRequestGenerator requestGenerator, IIndexerStatusService indexerStatusService, IConfigService configService, IParsingService parsingService, Logger logger)
+            : base(indexerStatusService, configService, parsingService, logger)
         {
-        }
-
-        public override IIndexerRequestGenerator GetRequestGenerator()
-        {
-            return new TriblerIndexerRequestGenerator() { Settings = Settings };
-        }
-
-        public override IParseIndexerResponse GetParser()
-        {
-            return new TriblerIndexerResponseParser(Settings);
+            this._requestGenerator = requestGenerator;
         }
 
         public override IList<ReleaseInfo> FetchRecent()
         {
-            return new List<ReleaseInfo>();
+            return _requestGenerator.FetchRecent(Settings);
         }
 
-        // override the default Test command as it requires support for rss feed.
         protected override void Test(List<ValidationFailure> failures)
         {
-            NzbDroneValidationResult nzbDroneValidationResult = Settings.Validate();
+            var nzbDroneValidationResult = Settings.Validate();
             failures.AddRange(nzbDroneValidationResult.Errors);
 
             try
             {
-                // fake a search for "Ubuntu"
-                var requestGenerator = (TriblerIndexerRequestGenerator)GetRequestGenerator();
-
-                var indexerRequest = requestGenerator.GetRequest("Ubuntu").First();
-                var httpResponse = _httpClient.Execute(indexerRequest.HttpRequest);
-                var releaseInfos = GetParser().ParseResponse(new IndexerResponse(indexerRequest, httpResponse));
+                var releaseInfos = new List<ReleaseInfo>();
+                releaseInfos.AddRange(_requestGenerator.FetchSubscribed(Settings));
+                releaseInfos.AddRange(_requestGenerator.Search(Settings, "Ubuntu"));
 
                 if (releaseInfos == null || releaseInfos.Count == 0)
                 {
-                    failures.Add(new ValidationFailure("search", "returned no results"));
+                    failures.Add(new ValidationFailure("rss", "returned no results"));
                 }
             }
             catch (ApiKeyException ex)
@@ -87,5 +70,81 @@ namespace NzbDrone.Core.Indexers.Tribler
             }
         }
 
+        public override IList<ReleaseInfo> Fetch(SeasonSearchCriteria searchCriteria)
+        {
+            var releaseInfo = new List<ReleaseInfo>();
+
+            foreach (var seasonNumber in searchCriteria.Episodes.Select(e => e.SeasonNumber).Distinct())
+            {
+                var query = string.Format("{0} S{1:00}E", searchCriteria.Series.Title, seasonNumber);
+                releaseInfo.AddRange(_requestGenerator.Search(Settings, query));
+
+                query = string.Format("{0} Season {1}", searchCriteria.Series.Title, seasonNumber);
+                releaseInfo.AddRange(_requestGenerator.Search(Settings, query));
+            }
+
+            return releaseInfo;
+        }
+
+        public override IList<ReleaseInfo> Fetch(SingleEpisodeSearchCriteria searchCriteria)
+        {
+            var releaseInfo = new List<ReleaseInfo>();
+
+            var query = string.Format("{0} S{1:00}E{2:00}", searchCriteria.Series.Title, searchCriteria.SeasonNumber, searchCriteria.EpisodeNumber);
+
+            releaseInfo.AddRange(_requestGenerator.Search(Settings, query));
+
+            return releaseInfo;
+        }
+
+        public override IList<ReleaseInfo> Fetch(DailyEpisodeSearchCriteria searchCriteria)
+        {
+            var query = string.Format("{0} {1:yyyy}.{1:MM}.{1:dd}", searchCriteria.Series.Title, searchCriteria.AirDate);
+            return _requestGenerator.Search(Settings, query);
+        }
+
+        public override IList<ReleaseInfo> Fetch(DailySeasonSearchCriteria searchCriteria)
+        {
+            var query = string.Format("{0} {1}", searchCriteria.Series.Title, searchCriteria.Year);
+            return _requestGenerator.Search(Settings, query);
+        }
+
+        public override IList<ReleaseInfo> Fetch(AnimeEpisodeSearchCriteria searchCriteria)
+        {
+            var releaseInfo = new List<ReleaseInfo>();
+
+            foreach (var episode in searchCriteria.Episodes)
+            {
+                var query = string.Format("{0} S{1:00}E{2:00}", searchCriteria.Series.Title, episode.SeasonNumber, episode.EpisodeNumber);
+                releaseInfo.AddRange(_requestGenerator.Search(Settings, query));
+            }
+
+            return releaseInfo;
+        }
+
+        public override IList<ReleaseInfo> Fetch(SpecialEpisodeSearchCriteria searchCriteria)
+        {
+            var releaseInfo = new List<ReleaseInfo>();
+
+            // not sure if this is the correct way to handle special episodes, it's mostly copy-paste.
+            var episodeQueryTitle = searchCriteria.EpisodeQueryTitles.Where(e => !string.IsNullOrWhiteSpace(e))
+                   .Select(e => SearchCriteriaBase.GetCleanSceneTitle(e))
+                   .ToArray();
+
+            foreach (var queryTitle in episodeQueryTitle)
+            {
+                var query = queryTitle.Replace('+', ' ');
+                query = System.Web.HttpUtility.UrlEncode(query);
+
+                releaseInfo.AddRange(_requestGenerator.Search(Settings, query));
+            }
+
+            return releaseInfo;
+        }
+
+        public override HttpRequest GetDownloadRequest(string link)
+        {
+            return null;
+        }
     }
 }

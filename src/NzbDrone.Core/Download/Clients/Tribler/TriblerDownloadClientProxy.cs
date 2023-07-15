@@ -1,9 +1,8 @@
-﻿using NLog;
+using System.Collections.Generic;
+using NLog;
 using NzbDrone.Common.Http;
 using NzbDrone.Common.Serializer;
 using NzbDrone.Core.Indexers.Tribler;
-using System.Collections.Generic;
-using System.Net;
 
 namespace NzbDrone.Core.Download.Clients.Tribler
 {
@@ -27,8 +26,8 @@ namespace NzbDrone.Core.Download.Clients.Tribler
 
         public TriblerDownloadClientProxy(IHttpClient httpClient, Logger logger)
         {
-            this._httpClient = httpClient;
-            this._logger = logger;
+            _httpClient = httpClient;
+            _logger = logger;
         }
 
         private HttpRequestBuilder getRequestBuilder(TriblerDownloadSettings settings, string relativePath = null)
@@ -51,12 +50,14 @@ namespace NzbDrone.Core.Download.Clients.Tribler
             return baseUrl;
         }
 
-        private T ProcessRequest<T>(HttpRequestBuilder requestBuilder) where T : new()
+        private T ProcessRequest<T>(HttpRequestBuilder requestBuilder)
+            where T : new()
         {
             return ProcessRequest<T>(requestBuilder.Build());
         }
 
-        private T ProcessRequest<T>(HttpRequest requestBuilder) where T : new()
+        private T ProcessRequest<T>(HttpRequest requestBuilder)
+            where T : new()
         {
             var httpRequest = requestBuilder;
 
@@ -70,7 +71,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
             }
             catch (HttpException ex)
             {
-                if (ex.Response.StatusCode == HttpStatusCode.Unauthorized)
+                if (ex.Response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
                     throw new DownloadClientAuthenticationException("Unauthorized - AuthToken is invalid", ex);
                 }
@@ -108,7 +109,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
             };
 
             var deleteRequestBuilder = getRequestBuilder(settings, "downloads/" + item.DownloadId.ToLower());
-            deleteRequestBuilder.Method = HttpMethod.DELETE;
+            deleteRequestBuilder.Method = System.Net.Http.HttpMethod.Delete;
 
             // manually set content of delete request.
             var deleteRequest = deleteRequestBuilder.Build();
@@ -121,13 +122,13 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         {
             // run hash through InfoHash class to ensure the correct casing.
             var addDownloadRequestBuilder = getRequestBuilder(settings, "downloads");
-            addDownloadRequestBuilder.Method = HttpMethod.PUT;
+            addDownloadRequestBuilder.Method = System.Net.Http.HttpMethod.Put;
 
             // manually set content of delete request.
             var addDownloadRequest = addDownloadRequestBuilder.Build();
             addDownloadRequest.SetContent(Json.ToJson(downloadRequest));
 
-            string infoHashAsString = ProcessRequest<AddDownloadResponse>(addDownloadRequest).Infohash;
+            var infoHashAsString = ProcessRequest<AddDownloadResponse>(addDownloadRequest).Infohash;
 
             var infoHash = MonoTorrent.InfoHash.FromHex(infoHashAsString);
             return infoHash.ToHex();

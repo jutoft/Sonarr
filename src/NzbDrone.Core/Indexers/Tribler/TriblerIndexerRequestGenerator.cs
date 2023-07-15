@@ -1,121 +1,148 @@
-﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using NzbDrone.Common.Http;
-using NzbDrone.Core.IndexerSearch.Definitions;
+using NzbDrone.Core.Parser.Model;
 
 namespace NzbDrone.Core.Indexers.Tribler
 {
-    public class TriblerIndexerRequestGenerator : IIndexerRequestGenerator
+    public interface ITriblerIndexerRequestGenerator
     {
-        public TriblerIndexerSettings Settings { get; set; }
+        IList<ReleaseInfo> FetchRecent(TriblerIndexerSettings settings);
+        IList<ReleaseInfo> FetchSubscribed(TriblerIndexerSettings settings);
+        IList<ReleaseInfo> FetchAll(TriblerIndexerSettings settings, Queue<TriblerChannelSubscription> channels);
 
-        // Tribler currently has no rss support.
-        public virtual IndexerPageableRequestChain GetRecentRequests()
+        IList<ReleaseInfo> Search(TriblerIndexerSettings settings, string query);
+    }
+
+    public class TriblerIndexerRequestGenerator : ITriblerIndexerRequestGenerator
+    {
+        private ITriblerIndexerProxy _indexerProxy;
+        private ITriblerIndexerResponseParser _responseParser;
+
+        public TriblerIndexerRequestGenerator(ITriblerIndexerProxy indexerProxy, ITriblerIndexerResponseParser responseParser)
         {
-            throw new NotSupportedException("Getting recent items is not yet supported");
+            this._indexerProxy = indexerProxy;
+            this._responseParser = responseParser;
         }
 
-        public virtual IndexerPageableRequestChain GetSearchRequests(AnimeEpisodeSearchCriteria searchCriteria)
+        public IList<ReleaseInfo> FetchRecent(TriblerIndexerSettings settings)
         {
-            var pageableRequests = new IndexerPageableRequestChain();
+            var channelQueue = new Queue<TriblerChannelSubscription>();
 
-            foreach (var episode in searchCriteria.Episodes)
+            if (settings.FetchSubscribedChannels)
             {
-                var query = string.Format("{0} S{1:00}E{2:00}", searchCriteria.Series.Title, episode.SeasonNumber, episode.EpisodeNumber);
-                pageableRequests.Add(GetRequest(query));
+                foreach (var subscription in _indexerProxy.ChannelsSubscribed(settings))
+                {
+                    channelQueue.Enqueue(subscription);
+                }
             }
 
-            return pageableRequests;
-        }
-
-        public virtual IndexerPageableRequestChain GetSearchRequests(SpecialEpisodeSearchCriteria searchCriteria)
-        {
-            var pageableRequests = new IndexerPageableRequestChain();
-
-            // not sure if this is the correct way to handle special episodes, it's mostly copy-paste.
-            var episodeQueryTitle = searchCriteria.EpisodeQueryTitles.Where(e => !string.IsNullOrWhiteSpace(e))
-                   .Select(e => SearchCriteriaBase.GetCleanSceneTitle(e))
-                   .ToArray();
-
-            foreach (var queryTitle in episodeQueryTitle)
+            if (settings.FetchExtraChannels)
             {
-                var query = queryTitle.Replace('+', ' ');
-                query = System.Web.HttpUtility.UrlEncode(query);
-
-                pageableRequests.Add(GetRequest(query));
+                foreach (var subscription in settings.GetExtraChannelSubscriptions())
+                {
+                    channelQueue.Enqueue(subscription);
+                }
             }
 
-            return pageableRequests;
+            return FetchAll(settings, channelQueue);
         }
 
-        public virtual IndexerPageableRequestChain GetSearchRequests(DailyEpisodeSearchCriteria searchCriteria)
+        /// <summary>
+        /// Lookup the tribler client's subscribed channels and visit them one-by-one.
+        /// </summary>
+        /// <returns></returns>
+        public IList<ReleaseInfo> FetchSubscribed(TriblerIndexerSettings settings)
         {
-            var pageableRequests = new IndexerPageableRequestChain();
+            var channelQueue = new Queue<TriblerChannelSubscription>(_indexerProxy.ChannelsSubscribed(settings));
 
-            var query = string.Format("{0} {1:yyyy}.{1:MM}.{1:dd}", searchCriteria.Series.Title, searchCriteria.AirDate);
-
-            pageableRequests.Add(GetRequest(query));
-
-            return pageableRequests;
+            return FetchAll(settings, channelQueue);
         }
 
-        public virtual IndexerPageableRequestChain GetSearchRequests(DailySeasonSearchCriteria searchCriteria)
+        public IList<ReleaseInfo> Search(TriblerIndexerSettings settings, string query)
         {
-            var pageableRequests = new IndexerPageableRequestChain();
+            var torrentInfo = new List<ReleaseInfo>();
+            var channelQueue = new Queue<TriblerChannelSubscription>();
+            var visitedChannels = new HashSet<TriblerChannelSubscription>();
 
-            var query = string.Format("{0} {1}", searchCriteria.Series.Title, searchCriteria.Year);
-
-            pageableRequests.Add(GetRequest(query));
-
-            return pageableRequests;
-        }
-
-        public virtual IndexerPageableRequestChain GetSearchRequests(SeasonSearchCriteria searchCriteria)
-        {
-            var pageableRequests = new IndexerPageableRequestChain();
-
-            foreach (var seasonNumber in searchCriteria.Episodes.Select(e => e.SeasonNumber).Distinct())
+            // first iterate the initial search.
+            foreach (var searchItem in _indexerProxy.Search(settings, query))
             {
-                var query = string.Format("{0} S{1:00}E", searchCriteria.Series.Title, seasonNumber);
-                pageableRequests.Add(GetRequest(query));
+                switch (searchItem.Type)
+                {
+                    // found a torrent, return that with release info.
+                    case TriblerMetadataType.RegularTorrent:
+                        torrentInfo.Add(_responseParser.ParseTorrent(searchItem));
+                        break;
 
-                query = string.Format("{0} Season {1}", searchCriteria.Series.Title, seasonNumber);
-                pageableRequests.Add(GetRequest(query));
+                    // content is another channel
+                    case TriblerMetadataType.ChannelNode:
+                    case TriblerMetadataType.CollectionNode:
+                    case TriblerMetadataType.ChannelTorrent:
+                        // recurse & call the endpoint with public key & id here.
+                        var subChannelItem = new TriblerChannelSubscription() { PublicKey = searchItem.PublicKey, ChannelId = searchItem.Id.ToString() };
+                        if (!visitedChannels.Contains(subChannelItem))
+                        {
+                            visitedChannels.Add(subChannelItem);
+                            channelQueue.Enqueue(subChannelItem);
+                        }
+
+                        break;
+
+                        // default: other types can just be skipped.
+                }
             }
 
-            return pageableRequests;
+            // then use an ordinary ChannelWalk for the channels etc found.
+            torrentInfo.AddRange(FetchAll(settings, channelQueue));
+
+            return torrentInfo;
         }
 
-        public virtual IndexerPageableRequestChain GetSearchRequests(SingleEpisodeSearchCriteria searchCriteria)
+        public IList<ReleaseInfo> FetchAll(TriblerIndexerSettings settings, Queue<TriblerChannelSubscription> channelQueue)
         {
-            var pageableRequests = new IndexerPageableRequestChain();
+            IList<ReleaseInfo> torrentInfo = new List<ReleaseInfo>();
 
-            foreach (var episode in searchCriteria.Episodes)
+            var visitedChannels = new HashSet<TriblerChannelSubscription>(channelQueue);
+
+            while (channelQueue.Count > 0)
             {
-                var query = string.Format("{0} S{1:00}E{2:00}", searchCriteria.Series.Title, episode.SeasonNumber, episode.EpisodeNumber);
+                // take the next channel to visit
+                var channel = channelQueue.Dequeue();
 
-                pageableRequests.Add(GetRequest(query));
+                // visit channel
+                ChannelNested(settings, channel, torrentInfo, visitedChannels, channelQueue);
             }
 
-            return pageableRequests;
+            return torrentInfo;
         }
 
-        public IEnumerable<IndexerRequest> GetRequest(string query)
+        private void ChannelNested(TriblerIndexerSettings settings, TriblerChannelSubscription channel, IList<ReleaseInfo> torrentInfo, ISet<TriblerChannelSubscription> visitedChannels, Queue<TriblerChannelSubscription> channelsToVisit)
         {
-            var requestBuilder = new HttpRequestBuilder(HttpUri.CombinePath(Settings.BaseUrl, "search"))
-                .Accept(HttpAccept.Json);
+            foreach (var channelItem in _indexerProxy.Channel(settings, channel.PublicKey, channel.ChannelId))
+            {
+                switch (channelItem.Type)
+                {
+                    // found a torrent, return that with release info.
+                    case TriblerMetadataType.RegularTorrent:
+                        torrentInfo.Add(_responseParser.ParseTorrent(channelItem));
+                        break;
 
-            requestBuilder.Headers.Add("X-Api-Key", Settings.ApiKey);
+                    // content is another channel
+                    case TriblerMetadataType.ChannelNode:
+                    case TriblerMetadataType.CollectionNode:
+                    case TriblerMetadataType.ChannelTorrent:
+                        // recurse & call the endpoint with public key & id here.
+                        var subChannelItem = new TriblerChannelSubscription() { PublicKey = channelItem.PublicKey, ChannelId = channelItem.Id.ToString() };
+                        if (!visitedChannels.Contains(subChannelItem))
+                        {
+                            visitedChannels.Add(subChannelItem);
+                            channelsToVisit.Enqueue(subChannelItem);
+                        }
 
-            requestBuilder.LogResponseContent = true;
+                        break;
 
-            requestBuilder.AddQueryParam("txt_filter", query);
-            requestBuilder.AddQueryParam("metadata_type", "torrent"); // otherwise tribler channels should be returned as part of the response.
-
-            // todo: should probably page the requests here with indexes etc.
-
-            yield return new IndexerRequest(requestBuilder.Build());
+                    // default: other types can just be skipped.
+                }
+            }
         }
     }
 }

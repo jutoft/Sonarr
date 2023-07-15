@@ -1,18 +1,18 @@
-﻿using System;
-using NzbDrone.Common.Disk;
-using NzbDrone.Common.Http;
-using NzbDrone.Core.Configuration;
-using NLog;
-using FluentValidation.Results;
-using NzbDrone.Core.MediaFiles.TorrentInfo;
-using NzbDrone.Core.RemotePathMappings;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using NzbDrone.Common.Extensions;
-using NzbDrone.Core.Parser.Model;
-using NzbDrone.Core.Validation;
+using FluentValidation.Results;
 using MonoTorrent;
+using NLog;
+using NzbDrone.Common.Disk;
+using NzbDrone.Common.Extensions;
+using NzbDrone.Common.Http;
+using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Indexers.Tribler;
+using NzbDrone.Core.MediaFiles.TorrentInfo;
+using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.RemotePathMappings;
+using NzbDrone.Core.Validation;
 
 namespace NzbDrone.Core.Download.Clients.Tribler
 {
@@ -20,15 +20,17 @@ namespace NzbDrone.Core.Download.Clients.Tribler
     {
         private readonly ITriblerDownloadClientProxy _proxy;
 
-        public TriblerDownloadClient(ITriblerDownloadClientProxy triblerDownloadClientProxy, ITorrentFileInfoReader torrentFileInfoReader,
-                            IHttpClient httpClient,
-                            IConfigService configService,
-                            IDiskProvider diskProvider,
-                            IRemotePathMappingService remotePathMappingService,
-                            Logger logger)
+        public TriblerDownloadClient(
+            ITriblerDownloadClientProxy triblerDownloadClientProxy,
+            ITorrentFileInfoReader torrentFileInfoReader,
+            IHttpClient httpClient,
+            IConfigService configService,
+            IDiskProvider diskProvider,
+            IRemotePathMappingService remotePathMappingService,
+            Logger logger)
             : base(torrentFileInfoReader, httpClient, configService, diskProvider, remotePathMappingService, logger)
         {
-            this._proxy = triblerDownloadClientProxy;
+            _proxy = triblerDownloadClientProxy;
         }
 
         public override string Name => "Tribler";
@@ -46,20 +48,24 @@ namespace NzbDrone.Core.Download.Clients.Tribler
             foreach (var download in downloads)
             {
                 // If totalsize == 0 the torrent is a magnet downloading metadata
-                if (download.Size == null || download.Size == 0) continue;
+                if (download.Size == null || download.Size == 0)
+                {
+                    continue;
+                }
 
                 // skip channel downloads
-                if (download.ChannelDownload == true) continue;
+                if (download.ChannelDownload == true)
+                {
+                    continue;
+                }
 
-                // skip channel downloads
-                if (download.ChannelDownload == true) continue;
+                var item = new DownloadClientItem
+                {
+                    DownloadId = InfoHash.FromHex(download.Infohash).ToHex(),
+                    Title = download.Name,
 
-                var item = new DownloadClientItem();
-                item.DownloadId = InfoHash.FromHex(download.Infohash).ToHex();
-                //item.Category = Settings.TvCategory;
-                item.Title = download.Name;
-
-                item.DownloadClientInfo = DownloadClientItemClientInfo.FromDownloadClient(this);
+                    DownloadClientInfo = DownloadClientItemClientInfo.FromDownloadClient(this)
+                };
 
                 // some concurrency could make this faster.
                 var files = _proxy.GetDownloadFiles(Settings, download);
@@ -84,7 +90,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                     item.RemainingTime = TimeSpan.FromSeconds(download.Eta.Value);
                 }
 
-                //TODO: the item's message should not be equal to Error
+                // TODO: the item's message should not be equal to Error
                 item.Message = download.Error;
 
                 // tribler always saves files unencrypted to disk.
@@ -93,15 +99,15 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                 // state handling
 
                 // TODO: impossible states?
-                //Failed = 4,
-                //Warning = 5
+                // Failed = 4,
+                // Warning = 5
 
-                //Queued = 0,
-                //Completed = 3,
-                //Downloading = 2,
+                // Queued = 0,
+                // Completed = 3,
+                // Downloading = 2,
 
                 // Paused is guesstimated
-                //Paused = 1,
+                // Paused = 1,
 
                 switch (download.Status)
                 {
@@ -157,7 +163,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         /**
          * this basically checks if torrent is stopped because of seeding has finished
          */
-        protected bool HasReachedSeedLimit(Download torrent, GetTriblerSettingsResponse config)
+        protected static bool HasReachedSeedLimit(Download torrent, GetTriblerSettingsResponse config)
         {
             // if download is still running then it's not finished.
             if (torrent.Status != DownloadStatus.DLSTATUS_STOPPED)
@@ -231,8 +237,12 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         protected override void Test(List<ValidationFailure> failures)
         {
             failures.AddIfNotNull(TestConnection());
-            if (failures.HasErrors()) return;
-            //failures.AddIfNotNull(TestGetTorrents());
+            if (failures.HasErrors())
+            {
+                return;
+            }
+
+            // failures.AddIfNotNull(TestGetTorrents());
         }
 
         protected string GetDownloadDirectory()
@@ -242,7 +252,10 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                 return Settings.TvDirectory;
             }
 
-            if (!Settings.TvCategory.IsNotNullOrWhiteSpace()) return null;
+            if (!Settings.TvCategory.IsNotNullOrWhiteSpace())
+            {
+                return null;
+            }
 
             var config = _proxy.GetConfig(Settings);
             var destDir = config.Settings.Download_defaults.Saveas;
@@ -260,6 +273,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
             catch (DownloadClientAuthenticationException ex)
             {
                 _logger.Error(ex, ex.Message);
+
                 return new NzbDroneValidationFailure("ApiKey", "Authentication failure")
                 {
                     DetailedDescription = string.Format("Please verify your ApiKey is correct. Also verify if the host running Sonarr isn't blocked from accessing {0} by WhiteList limitations in the {0} configuration.", Name)

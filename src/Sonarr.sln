@@ -75,11 +75,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sonarr.Mono", "NzbDrone.Mon
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sonarr.Windows", "NzbDrone.Windows\Sonarr.Windows.csproj", "{4AE3B731-442E-4AF0-88A5-9FABEB685A0D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tribler.Api", "Tribler.Api\Tribler.Api.csproj", "{551C4C9D-BA03-4C52-BA5A-FF2C367ECC42}"
-	ProjectSection(ProjectDependencies) = postProject
-		{F2BE0FDF-6E47-4827-A420-DD4EF82407F8} = {F2BE0FDF-6E47-4827-A420-DD4EF82407F8}
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Posix = Debug|Posix

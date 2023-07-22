@@ -43,7 +43,7 @@ namespace NzbDrone.Core.Indexers.Tribler
             {
                 var releaseInfos = new List<ReleaseInfo>();
                 releaseInfos.AddRange(_requestGenerator.FetchSubscribed(Settings));
-                releaseInfos.AddRange(_requestGenerator.Search(Settings, "Ubuntu"));
+                releaseInfos.AddRange(_requestGenerator.Search(Settings, "ubuntu", 1));
 
                 if (releaseInfos == null || releaseInfos.Count == 0)
                 {
@@ -61,6 +61,21 @@ namespace NzbDrone.Core.Indexers.Tribler
                 _logger.Warn(ex, "Unable to connect to indexer");
 
                 failures.Add(new ValidationFailure(string.Empty, "Unable to connect to indexer. " + ex.Message));
+            }
+            catch (HttpException ex)
+            {
+                switch (ex.Response.StatusCode)
+                {
+                    case System.Net.HttpStatusCode.Unauthorized:
+                        _logger.Warn("Response from indexer: API Key appears to be invalid: " + ex.Message);
+                        failures.Add(new ValidationFailure("ApiKey", "Invalid API Key"));
+                        break;
+
+                    default:
+                        _logger.Warn(ex, "Error response from indexer");
+                        failures.Add(new ValidationFailure(string.Empty, "Unable to connect to indexer. " + ex.Message));
+                        break;
+                }
             }
             catch (Exception ex)
             {

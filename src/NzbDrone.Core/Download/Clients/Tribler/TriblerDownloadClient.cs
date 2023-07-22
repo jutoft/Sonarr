@@ -87,7 +87,14 @@ namespace NzbDrone.Core.Download.Clients.Tribler
 
                 if (download.Eta.HasValue)
                 {
-                    item.RemainingTime = TimeSpan.FromSeconds(download.Eta.Value);
+                    if (download.Eta.Value > long.MaxValue)
+                    {
+                        item.RemainingTime = TimeSpan.MaxValue;
+                    }
+                    else
+                    {
+                        item.RemainingTime = TimeSpan.FromSeconds(download.Eta.Value);
+                    }
                 }
 
                 // TODO: the item's message should not be equal to Error

@@ -18,7 +18,7 @@ namespace NzbDrone.Core.Indexers.Tribler
             {
                 Title = torrent.Name,
                 Seeders = torrent.Num_seeders,
-                Peers = torrent.Num_leechers,
+                Peers = torrent.Num_seeders + torrent.Num_leechers,
                 InfoHash = torrent.Infohash,
                 DownloadProtocol = DownloadProtocol.Torrent,
             };
@@ -29,6 +29,11 @@ namespace NzbDrone.Core.Indexers.Tribler
             }
 
             // drop invalid date's.
+            if (torrent.Created.HasValue && torrent.Created.Value > _TORRENT_INVENTION_UNIX_TIMESTAMP)
+            {
+                release.PublishDate = DateTimeOffset.FromUnixTimeSeconds(torrent.Created.Value).DateTime;
+            }
+
             if (torrent.Updated.HasValue && torrent.Updated.Value > _TORRENT_INVENTION_UNIX_TIMESTAMP)
             {
                 release.PublishDate = DateTimeOffset.FromUnixTimeSeconds(torrent.Updated.Value).DateTime;

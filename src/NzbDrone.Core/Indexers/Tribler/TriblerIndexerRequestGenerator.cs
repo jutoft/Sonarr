@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using NzbDrone.Core.Parser.Model;
 
 namespace NzbDrone.Core.Indexers.Tribler
@@ -8,8 +9,8 @@ namespace NzbDrone.Core.Indexers.Tribler
         IList<ReleaseInfo> FetchRecent(TriblerIndexerSettings settings);
         IList<ReleaseInfo> FetchSubscribed(TriblerIndexerSettings settings);
         IList<ReleaseInfo> FetchAll(TriblerIndexerSettings settings, Queue<TriblerChannelSubscription> channels);
-
-        IList<ReleaseInfo> Search(TriblerIndexerSettings settings, string query);
+        IList<ReleaseInfo> Search(TriblerIndexerSettings settings, string query, int? maxRows = null);
+        void StartRemoteQuery(TriblerIndexerSettings settings, string query);
     }
 
     public class TriblerIndexerRequestGenerator : ITriblerIndexerRequestGenerator
@@ -57,14 +58,20 @@ namespace NzbDrone.Core.Indexers.Tribler
             return FetchAll(settings, channelQueue);
         }
 
-        public IList<ReleaseInfo> Search(TriblerIndexerSettings settings, string query)
+        public IList<ReleaseInfo> Search(TriblerIndexerSettings settings, string query, int? maxRows = null)
         {
             var torrentInfo = new List<ReleaseInfo>();
             var channelQueue = new Queue<TriblerChannelSubscription>();
             var visitedChannels = new HashSet<TriblerChannelSubscription>();
 
+            StartRemoteQuery(settings, query);
+
+            // TODO: This could be replaced by starting to listen to events before remote query is triggered and then only wait for a few responses to come back.
+            // If this delay is removed then the user usually has to do a search 2 times before getting results as the async responses do not get back before we look them up.
+            Thread.Sleep(3000); // allow network queries to respond
+
             // first iterate the initial search.
-            foreach (var searchItem in _indexerProxy.Search(settings, query))
+            foreach (var searchItem in _indexerProxy.Search(settings, query, maxRows))
             {
                 switch (searchItem.Type)
                 {
@@ -83,6 +90,14 @@ namespace NzbDrone.Core.Indexers.Tribler
                         {
                             visitedChannels.Add(subChannelItem);
                             channelQueue.Enqueue(subChannelItem);
+                        }
+
+                        break;
+                    case TriblerMetadataType.Snippet:
+                        // new somwhat hidden alternative response type where torrents are grouped, not described in swagger
+                        foreach (var subItem in searchItem.TorrentsInSnippets)
+                        {
+                            torrentInfo.Add(_responseParser.ParseTorrent(subItem));
                         }
 
                         break;
@@ -140,9 +155,23 @@ namespace NzbDrone.Core.Indexers.Tribler
 
                         break;
 
-                    // default: other types can just be skipped.
+                    case TriblerMetadataType.Snippet:
+                        // new somwhat hidden alternative response type where torrents are grouped, not described in swagger
+                        foreach (var subItem in channelItem.TorrentsInSnippets)
+                        {
+                            torrentInfo.Add(_responseParser.ParseTorrent(subItem));
+                        }
+
+                        break;
+
+                        // default: other types can just be skipped.
                 }
             }
+        }
+
+        public void StartRemoteQuery(TriblerIndexerSettings settings, string query)
+        {
+            _indexerProxy.StartRemoteQuery(settings, query);
         }
     }
 }

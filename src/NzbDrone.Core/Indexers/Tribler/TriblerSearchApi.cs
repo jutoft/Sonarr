@@ -39,6 +39,10 @@ namespace NzbDrone.Core.Indexers.Tribler
     {
         [Newtonsoft.Json.JsonProperty("request_uuid", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Request_uuid { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("peers", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<string> Peers { get; set; }
+
     }
 
     // src/tribler-core/tribler_core/components/metadata_store/db/orm_bindings/channel_node.py
@@ -65,6 +69,7 @@ namespace NzbDrone.Core.Indexers.Tribler
         RegularTorrent = 300,
         ChannelTorrent = 400,
         Deleted = 500,
+        Snippet = 600,
     }
 
     // below items are based on trible source: src/tribler-core/tribler_core/components/metadata_store/restapi/metadata_schema.py
@@ -106,6 +111,9 @@ namespace NzbDrone.Core.Indexers.Tribler
         [Newtonsoft.Json.JsonProperty("torrents", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Torrents { get; set; }
 
+        [Newtonsoft.Json.JsonProperty("torrents_in_snippet", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.Collections.Generic.ICollection<TorrentMetadata> TorrentsInSnippets { get; set; }
+
         // TorrentMetadataSchema
         [Newtonsoft.Json.JsonProperty("infohash", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Infohash { get; set; }
@@ -127,6 +135,8 @@ namespace NzbDrone.Core.Indexers.Tribler
 
         [Newtonsoft.Json.JsonProperty("updated", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public long? Updated { get; set; }
+        [Newtonsoft.Json.JsonProperty("created", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public long? Created { get; set; }
 
         // ChannelMetadataSchema
         [Newtonsoft.Json.JsonProperty("dirty", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]

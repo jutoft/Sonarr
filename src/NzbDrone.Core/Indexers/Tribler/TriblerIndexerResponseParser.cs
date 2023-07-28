@@ -1,18 +1,19 @@
 using System;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.ThingiProvider;
 
 namespace NzbDrone.Core.Indexers.Tribler
 {
     public interface ITriblerIndexerResponseParser
     {
-        TorrentInfo ParseTorrent(TorrentMetadata torrent);
+        TorrentInfo ParseTorrent(ProviderDefinition providerDefinition, TorrentMetadata torrent);
     }
 
     public class TriblerIndexerResponseParser : ITriblerIndexerResponseParser
     {
         private readonly long _TORRENT_INVENTION_UNIX_TIMESTAMP = 946684800;
 
-        public TorrentInfo ParseTorrent(TorrentMetadata torrent)
+        public TorrentInfo ParseTorrent(ProviderDefinition providerDefinition, TorrentMetadata torrent)
         {
             var release = new TorrentInfo
             {
@@ -21,6 +22,8 @@ namespace NzbDrone.Core.Indexers.Tribler
                 Peers = torrent.Num_seeders + torrent.Num_leechers,
                 InfoHash = torrent.Infohash,
                 DownloadProtocol = DownloadProtocol.Torrent,
+                Indexer = providerDefinition.Name,
+                IndexerId = providerDefinition.Id,
             };
 
             if (torrent.Size.HasValue)

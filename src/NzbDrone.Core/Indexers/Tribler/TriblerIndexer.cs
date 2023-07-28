@@ -31,7 +31,7 @@ namespace NzbDrone.Core.Indexers.Tribler
 
         public override IList<ReleaseInfo> FetchRecent()
         {
-            return _requestGenerator.FetchRecent(Settings);
+            return _requestGenerator.FetchRecent(Definition, Settings);
         }
 
         protected override void Test(List<ValidationFailure> failures)
@@ -42,8 +42,8 @@ namespace NzbDrone.Core.Indexers.Tribler
             try
             {
                 var releaseInfos = new List<ReleaseInfo>();
-                releaseInfos.AddRange(_requestGenerator.FetchSubscribed(Settings));
-                releaseInfos.AddRange(_requestGenerator.Search(Settings, "ubuntu", 1));
+                releaseInfos.AddRange(_requestGenerator.FetchSubscribed(Definition, Settings));
+                releaseInfos.AddRange(_requestGenerator.Search(Definition, Settings, "ubuntu", 1));
 
                 if (releaseInfos == null || releaseInfos.Count == 0)
                 {
@@ -92,10 +92,10 @@ namespace NzbDrone.Core.Indexers.Tribler
             foreach (var seasonNumber in searchCriteria.Episodes.Select(e => e.SeasonNumber).Distinct())
             {
                 var query = string.Format("{0} S{1:00}E", searchCriteria.Series.Title, seasonNumber);
-                releaseInfo.AddRange(_requestGenerator.Search(Settings, query));
+                releaseInfo.AddRange(_requestGenerator.Search(Definition, Settings, query));
 
                 query = string.Format("{0} Season {1}", searchCriteria.Series.Title, seasonNumber);
-                releaseInfo.AddRange(_requestGenerator.Search(Settings, query));
+                releaseInfo.AddRange(_requestGenerator.Search(Definition, Settings, query));
             }
 
             return releaseInfo;
@@ -107,7 +107,7 @@ namespace NzbDrone.Core.Indexers.Tribler
 
             var query = string.Format("{0} S{1:00}E{2:00}", searchCriteria.Series.Title, searchCriteria.SeasonNumber, searchCriteria.EpisodeNumber);
 
-            releaseInfo.AddRange(_requestGenerator.Search(Settings, query));
+            releaseInfo.AddRange(_requestGenerator.Search(Definition, Settings, query));
 
             return releaseInfo;
         }
@@ -115,13 +115,13 @@ namespace NzbDrone.Core.Indexers.Tribler
         public override IList<ReleaseInfo> Fetch(DailyEpisodeSearchCriteria searchCriteria)
         {
             var query = string.Format("{0} {1:yyyy}.{1:MM}.{1:dd}", searchCriteria.Series.Title, searchCriteria.AirDate);
-            return _requestGenerator.Search(Settings, query);
+            return _requestGenerator.Search(Definition, Settings, query);
         }
 
         public override IList<ReleaseInfo> Fetch(DailySeasonSearchCriteria searchCriteria)
         {
             var query = string.Format("{0} {1}", searchCriteria.Series.Title, searchCriteria.Year);
-            return _requestGenerator.Search(Settings, query);
+            return _requestGenerator.Search(Definition, Settings, query);
         }
 
         public override IList<ReleaseInfo> Fetch(AnimeEpisodeSearchCriteria searchCriteria)
@@ -131,7 +131,7 @@ namespace NzbDrone.Core.Indexers.Tribler
             foreach (var episode in searchCriteria.Episodes)
             {
                 var query = string.Format("{0} S{1:00}E{2:00}", searchCriteria.Series.Title, episode.SeasonNumber, episode.EpisodeNumber);
-                releaseInfo.AddRange(_requestGenerator.Search(Settings, query));
+                releaseInfo.AddRange(_requestGenerator.Search(Definition, Settings, query));
             }
 
             return releaseInfo;
@@ -151,7 +151,7 @@ namespace NzbDrone.Core.Indexers.Tribler
                 var query = queryTitle.Replace('+', ' ');
                 query = System.Web.HttpUtility.UrlEncode(query);
 
-                releaseInfo.AddRange(_requestGenerator.Search(Settings, query));
+                releaseInfo.AddRange(_requestGenerator.Search(Definition, Settings, query));
             }
 
             return releaseInfo;

@@ -2,15 +2,16 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
 using NzbDrone.Core.Parser.Model;
+using NzbDrone.Core.ThingiProvider;
 
 namespace NzbDrone.Core.Indexers.Tribler
 {
     public interface ITriblerIndexerRequestGenerator
     {
-        IList<ReleaseInfo> FetchRecent(TriblerIndexerSettings settings);
-        IList<ReleaseInfo> FetchSubscribed(TriblerIndexerSettings settings);
-        IList<ReleaseInfo> FetchAll(TriblerIndexerSettings settings, Queue<TriblerChannelSubscription> channels);
-        IList<ReleaseInfo> Search(TriblerIndexerSettings settings, string query, int? maxRows = null);
+        IList<ReleaseInfo> FetchRecent(ProviderDefinition providerDefinition, TriblerIndexerSettings settings);
+        IList<ReleaseInfo> FetchSubscribed(ProviderDefinition providerDefinition, TriblerIndexerSettings settings);
+        IList<ReleaseInfo> FetchAll(ProviderDefinition providerDefinition, TriblerIndexerSettings settings, Queue<TriblerChannelSubscription> channels);
+        IList<ReleaseInfo> Search(ProviderDefinition providerDefinition, TriblerIndexerSettings settings, string query, int? maxRows = null);
         void StartRemoteQuery(TriblerIndexerSettings settings, string query);
     }
 
@@ -25,7 +26,7 @@ namespace NzbDrone.Core.Indexers.Tribler
             this._responseParser = responseParser;
         }
 
-        public IList<ReleaseInfo> FetchRecent(TriblerIndexerSettings settings)
+        public IList<ReleaseInfo> FetchRecent(ProviderDefinition providerDefinition, TriblerIndexerSettings settings)
         {
             var channelQueue = new Queue<TriblerChannelSubscription>();
 
@@ -45,21 +46,21 @@ namespace NzbDrone.Core.Indexers.Tribler
                 }
             }
 
-            return FetchAll(settings, channelQueue);
+            return FetchAll(providerDefinition, settings, channelQueue);
         }
 
         /// <summary>
         /// Lookup the tribler client's subscribed channels and visit them one-by-one.
         /// </summary>
         /// <returns></returns>
-        public IList<ReleaseInfo> FetchSubscribed(TriblerIndexerSettings settings)
+        public IList<ReleaseInfo> FetchSubscribed(ProviderDefinition providerDefinition, TriblerIndexerSettings settings)
         {
             var channelQueue = new Queue<TriblerChannelSubscription>(_indexerProxy.ChannelsSubscribed(settings));
 
-            return FetchAll(settings, channelQueue);
+            return FetchAll(providerDefinition, settings, channelQueue);
         }
 
-        public IList<ReleaseInfo> Search(TriblerIndexerSettings settings, string query, int? maxRows = null)
+        public IList<ReleaseInfo> Search(ProviderDefinition providerDefinition, TriblerIndexerSettings settings, string query, int? maxRows = null)
         {
             var torrentInfo = new List<ReleaseInfo>();
             var channelQueue = new Queue<TriblerChannelSubscription>();
@@ -80,7 +81,7 @@ namespace NzbDrone.Core.Indexers.Tribler
                 {
                     // found a torrent, return that with release info.
                     case TriblerMetadataType.RegularTorrent:
-                        torrentInfo.Add(_responseParser.ParseTorrent(searchItem));
+                        torrentInfo.Add(_responseParser.ParseTorrent(providerDefinition, searchItem));
                         break;
 
                     // content is another channel
@@ -100,7 +101,7 @@ namespace NzbDrone.Core.Indexers.Tribler
                         // new somwhat hidden alternative response type where torrents are grouped, not described in swagger
                         foreach (var subItem in searchItem.TorrentsInSnippets)
                         {
-                            torrentInfo.Add(_responseParser.ParseTorrent(subItem));
+                            torrentInfo.Add(_responseParser.ParseTorrent(providerDefinition, subItem));
                         }
 
                         break;
@@ -110,12 +111,12 @@ namespace NzbDrone.Core.Indexers.Tribler
             }
 
             // then use an ordinary ChannelWalk for the channels etc found.
-            torrentInfo.AddRange(FetchAll(settings, channelQueue));
+            torrentInfo.AddRange(FetchAll(providerDefinition, settings, channelQueue));
 
             return torrentInfo;
         }
 
-        public IList<ReleaseInfo> FetchAll(TriblerIndexerSettings settings, Queue<TriblerChannelSubscription> channelQueue)
+        public IList<ReleaseInfo> FetchAll(ProviderDefinition providerDefinition, TriblerIndexerSettings settings, Queue<TriblerChannelSubscription> channelQueue)
         {
             IList<ReleaseInfo> torrentInfo = new List<ReleaseInfo>();
 
@@ -127,7 +128,7 @@ namespace NzbDrone.Core.Indexers.Tribler
                 var channel = channelQueue.Dequeue();
 
                 // visit channel
-                ChannelNested(settings, channel, torrentInfo, visitedChannels, channelQueue);
+                ChannelNested(providerDefinition, settings, channel, torrentInfo, visitedChannels, channelQueue);
             }
 
             return torrentInfo;
@@ -140,7 +141,7 @@ namespace NzbDrone.Core.Indexers.Tribler
             return fts_query;
         }
 
-        private void ChannelNested(TriblerIndexerSettings settings, TriblerChannelSubscription channel, IList<ReleaseInfo> torrentInfo, ISet<TriblerChannelSubscription> visitedChannels, Queue<TriblerChannelSubscription> channelsToVisit)
+        private void ChannelNested(ProviderDefinition providerDefinition, TriblerIndexerSettings settings, TriblerChannelSubscription channel, IList<ReleaseInfo> torrentInfo, ISet<TriblerChannelSubscription> visitedChannels, Queue<TriblerChannelSubscription> channelsToVisit)
         {
             foreach (var channelItem in _indexerProxy.Channel(settings, channel.PublicKey, channel.ChannelId))
             {
@@ -148,7 +149,7 @@ namespace NzbDrone.Core.Indexers.Tribler
                 {
                     // found a torrent, return that with release info.
                     case TriblerMetadataType.RegularTorrent:
-                        torrentInfo.Add(_responseParser.ParseTorrent(channelItem));
+                        torrentInfo.Add(_responseParser.ParseTorrent(providerDefinition, channelItem));
                         break;
 
                     // content is another channel
@@ -169,7 +170,7 @@ namespace NzbDrone.Core.Indexers.Tribler
                         // new somwhat hidden alternative response type where torrents are grouped, not described in swagger
                         foreach (var subItem in channelItem.TorrentsInSnippets)
                         {
-                            torrentInfo.Add(_responseParser.ParseTorrent(subItem));
+                            torrentInfo.Add(_responseParser.ParseTorrent(providerDefinition, subItem));
                         }
 
                         break;

@@ -167,11 +167,43 @@ namespace NzbDrone.Core.Download.Clients.Tribler
             return items;
         }
 
+        public override void RemoveItem(DownloadClientItem item, bool deleteData)
+        {
+            _proxy.RemoveDownload(Settings, item, deleteData);
+        }
+
+        public override DownloadClientInfo GetStatus()
+        {
+            var config = _proxy.GetConfig(Settings);
+            var destDir = config.Settings.Download_defaults.Saveas;
+
+            if (Settings.TvCategory.IsNotNullOrWhiteSpace())
+            {
+                destDir = string.Format("{0}/.{1}", destDir, Settings.TvCategory);
+            }
+
+            return new DownloadClientInfo
+            {
+                IsLocalhost = Settings.Host == "127.0.0.1" || Settings.Host == "localhost",
+                OutputRootFolders = new List<OsPath> { _remotePathMappingService.RemapRemoteToLocal(Settings.Host, new OsPath(destDir)) }
+            };
+        }
+
         /**
          * this basically checks if torrent is stopped because of seeding has finished
          */
         protected static bool HasReachedSeedLimit(Download torrent, GetTriblerSettingsResponse config)
         {
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            if (torrent == null)
+            {
+                throw new ArgumentNullException(nameof(torrent));
+            }
+
             // if download is still running then it's not finished.
             if (torrent.Status != DownloadStatus.STOPPED)
             {
@@ -202,35 +234,15 @@ namespace NzbDrone.Core.Download.Clients.Tribler
             }
         }
 
-        public override void RemoveItem(DownloadClientItem item, bool deleteData)
-        {
-            _proxy.RemoveDownload(Settings, item, deleteData);
-        }
-
-        public override DownloadClientInfo GetStatus()
-        {
-            var config = _proxy.GetConfig(Settings);
-            var destDir = config.Settings.Download_defaults.Saveas;
-
-            if (Settings.TvCategory.IsNotNullOrWhiteSpace())
-            {
-                destDir = string.Format("{0}/.{1}", destDir, Settings.TvCategory);
-            }
-
-            return new DownloadClientInfo
-            {
-                IsLocalhost = Settings.Host == "127.0.0.1" || Settings.Host == "localhost",
-                OutputRootFolders = new List<OsPath> { _remotePathMappingService.RemapRemoteToLocal(Settings.Host, new OsPath(destDir)) }
-            };
-        }
-
         protected override string AddFromMagnetLink(RemoteEpisode remoteEpisode, string hash, string magnetLink)
         {
-            var addDownloadRequestObject = new AddDownloadRequest();
-            addDownloadRequestObject.Destination = GetDownloadDirectory();
-            addDownloadRequestObject.Uri = magnetLink;
-            addDownloadRequestObject.Safe_seeding = Settings.SafeSeeding;
-            addDownloadRequestObject.Anon_hops = Settings.AnonymityLevel;
+            var addDownloadRequestObject = new AddDownloadRequest
+            {
+                Destination = GetDownloadDirectory(),
+                Uri = magnetLink,
+                Safe_seeding = Settings.SafeSeeding,
+                Anon_hops = Settings.AnonymityLevel
+            };
 
             return _proxy.AddFromMagnetLink(Settings, addDownloadRequestObject);
         }

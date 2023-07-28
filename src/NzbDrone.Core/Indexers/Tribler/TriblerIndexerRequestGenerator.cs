@@ -137,7 +137,9 @@ namespace NzbDrone.Core.Indexers.Tribler
         public static string SanitizeQuery(string query)
         {
             var fts_reg = new Regex(@"[^\w]");
+            var duplicate_space_reg = new Regex(@"\s+");
             var fts_query = fts_reg.Replace(query, " ");
+            fts_query = duplicate_space_reg.Replace(fts_query, " ").Trim();
             return fts_query;
         }
 

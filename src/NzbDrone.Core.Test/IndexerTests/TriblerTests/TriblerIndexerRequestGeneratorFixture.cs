@@ -11,7 +11,18 @@ namespace NzbDrone.Core.Test.IndexerTests.TriblerTests
         public void ParseSimpleQuery()
         {
             TriblerIndexerRequestGenerator.SanitizeQuery("hello world").Should().Be("hello world");
+        }
+
+        [Test]
+        public void ParseWithColon()
+        {
             TriblerIndexerRequestGenerator.SanitizeQuery("hello :world").Should().Be("hello world");
+        }
+
+        [Test]
+        public void ParseWithWierdChars()
+        {
+            TriblerIndexerRequestGenerator.SanitizeQuery("hello :world #123").Should().Be("hello world 123");
         }
     }
 }

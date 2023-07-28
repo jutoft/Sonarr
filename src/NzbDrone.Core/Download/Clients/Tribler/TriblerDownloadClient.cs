@@ -118,22 +118,22 @@ namespace NzbDrone.Core.Download.Clients.Tribler
 
                 switch (download.Status)
                 {
-                    case DownloadStatus.DLSTATUS_HASHCHECKING:
-                    case DownloadStatus.DLSTATUS_WAITING4HASHCHECK:
-                    case DownloadStatus.DLSTATUS_CIRCUITS:
-                    case DownloadStatus.DLSTATUS_EXIT_NODES:
-                    case DownloadStatus.DLSTATUS_DOWNLOADING:
+                    case DownloadStatus.HASHCHECKING:
+                    case DownloadStatus.WAITING4HASHCHECK:
+                    case DownloadStatus.CIRCUITS:
+                    case DownloadStatus.EXIT_NODES:
+                    case DownloadStatus.DOWNLOADING:
                         item.Status = DownloadItemStatus.Downloading;
                         break;
-                    case DownloadStatus.DLSTATUS_METADATA:
-                    case DownloadStatus.DLSTATUS_ALLOCATING_DISKSPACE:
+                    case DownloadStatus.METADATA:
+                    case DownloadStatus.ALLOCATING_DISKSPACE:
                         item.Status = DownloadItemStatus.Queued;
                         break;
-                    case DownloadStatus.DLSTATUS_SEEDING:
-                    case DownloadStatus.DLSTATUS_STOPPED:
+                    case DownloadStatus.SEEDING:
+                    case DownloadStatus.STOPPED:
                         item.Status = DownloadItemStatus.Completed;
                         break;
-                    case DownloadStatus.DLSTATUS_STOPPED_ON_ERROR:
+                    case DownloadStatus.STOPPED_ON_ERROR:
                         item.Status = DownloadItemStatus.Failed;
                         break;
                     default: // new status in API? default to downloading
@@ -144,7 +144,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
                 }
 
                 // override status' if completed but progress is not finished
-                if (download.Status == DownloadStatus.DLSTATUS_STOPPED && download.Progress < 1)
+                if (download.Status == DownloadStatus.STOPPED && download.Progress < 1)
                 {
                     item.Status = DownloadItemStatus.Paused;
                 }
@@ -173,14 +173,14 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         protected static bool HasReachedSeedLimit(Download torrent, GetTriblerSettingsResponse config)
         {
             // if download is still running then it's not finished.
-            if (torrent.Status != DownloadStatus.DLSTATUS_STOPPED)
+            if (torrent.Status != DownloadStatus.STOPPED)
             {
                 return false;
             }
 
             switch (config.Settings.Download_defaults.Seeding_mode)
             {
-                // if in ratio mode, wait for ratio to become larger than expeced. Tribler's DownloadStatus will switch from DLSTATUS_SEEDING to DLSTATUS_STOPPED
+                // if in ratio mode, wait for ratio to become larger than expeced. Tribler's DownloadStatus will switch from SEEDING to STOPPED
                 case Download_defaultsSeeding_mode.Ratio:
 
                     return torrent.Ratio.HasValue

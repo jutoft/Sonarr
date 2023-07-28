@@ -35,7 +35,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         public TriblerDownloadSettings()
         {
             Host = "localhost";
-            Port = 52194;
+            Port = 20100;
             UrlBase = "";
 
             AnonymityLevel = 1;

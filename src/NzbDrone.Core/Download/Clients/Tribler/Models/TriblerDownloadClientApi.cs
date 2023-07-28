@@ -3,35 +3,35 @@ namespace NzbDrone.Core.Download.Clients.Tribler
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.5.2.0 (Newtonsoft.Json v11.0.0.0)")]
     public enum DownloadStatus
     {
-        [System.Runtime.Serialization.EnumMember(Value = @"DLSTATUS_WAITING4HASHCHECK")]
-        DLSTATUS_WAITING4HASHCHECK = 0,
+        [System.Runtime.Serialization.EnumMember(Value = @"WAITING4HASHCHECK")]
+        WAITING4HASHCHECK = 0,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"DLSTATUS_HASHCHECKING")]
-        DLSTATUS_HASHCHECKING = 1,
+        [System.Runtime.Serialization.EnumMember(Value = @"HASHCHECKING")]
+        HASHCHECKING = 1,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"DLSTATUS_METADATA")]
-        DLSTATUS_METADATA = 2,
+        [System.Runtime.Serialization.EnumMember(Value = @"METADATA")]
+        METADATA = 2,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"DLSTATUS_DOWNLOADING")]
-        DLSTATUS_DOWNLOADING = 3,
+        [System.Runtime.Serialization.EnumMember(Value = @"DOWNLOADING")]
+        DOWNLOADING = 3,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"DLSTATUS_SEEDING")]
-        DLSTATUS_SEEDING = 4,
+        [System.Runtime.Serialization.EnumMember(Value = @"SEEDING")]
+        SEEDING = 4,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"DLSTATUS_STOPPED")]
-        DLSTATUS_STOPPED = 5,
+        [System.Runtime.Serialization.EnumMember(Value = @"STOPPED")]
+        STOPPED = 5,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"DLSTATUS_ALLOCATING_DISKSPACE")]
-        DLSTATUS_ALLOCATING_DISKSPACE = 6,
+        [System.Runtime.Serialization.EnumMember(Value = @"ALLOCATING_DISKSPACE")]
+        ALLOCATING_DISKSPACE = 6,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"DLSTATUS_EXIT_NODES")]
-        DLSTATUS_EXIT_NODES = 7,
+        [System.Runtime.Serialization.EnumMember(Value = @"EXIT_NODES")]
+        EXIT_NODES = 7,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"DLSTATUS_CIRCUITS")]
-        DLSTATUS_CIRCUITS = 8,
+        [System.Runtime.Serialization.EnumMember(Value = @"CIRCUITS")]
+        CIRCUITS = 8,
 
-        [System.Runtime.Serialization.EnumMember(Value = @"DLSTATUS_STOPPED_ON_ERROR")]
-        DLSTATUS_STOPPED_ON_ERROR = 9,
+        [System.Runtime.Serialization.EnumMember(Value = @"STOPPED_ON_ERROR")]
+        STOPPED_ON_ERROR = 9,
         
     }
 
@@ -72,13 +72,13 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         public double? Eta { get; set; }
 
         [Newtonsoft.Json.JsonProperty("total_pieces", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Total_pieces { get; set; }
+        public long? Total_pieces { get; set; }
 
         [Newtonsoft.Json.JsonProperty("num_seeds", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Num_seeds { get; set; }
+        public long? Num_seeds { get; set; }
 
         [Newtonsoft.Json.JsonProperty("total_up", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Total_up { get; set; }
+        public long? Total_up { get; set; }
 
         [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
@@ -94,16 +94,16 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         public bool? Vod_mode { get; set; }
 
         [Newtonsoft.Json.JsonProperty("time_added", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Time_added { get; set; }
+        public long? Time_added { get; set; }
 
         [Newtonsoft.Json.JsonProperty("max_upload_speed", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Max_upload_speed { get; set; }
+        public long? Max_upload_speed { get; set; }
 
         [Newtonsoft.Json.JsonProperty("max_download_speed", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Max_download_speed { get; set; }
+        public long? Max_download_speed { get; set; }
 
         [Newtonsoft.Json.JsonProperty("hops", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Hops { get; set; }
+        public long? Hops { get; set; }
 
         [Newtonsoft.Json.JsonProperty("safe_seeding", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Safe_seeding { get; set; }
@@ -112,7 +112,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         public string Error { get; set; }
 
         [Newtonsoft.Json.JsonProperty("total_down", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Total_down { get; set; }
+        public long? Total_down { get; set; }
 
         [Newtonsoft.Json.JsonProperty("vod_prebuffering_progress", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public float? Vod_prebuffering_progress { get; set; }
@@ -142,7 +142,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         public System.Collections.Generic.ICollection<string> Files { get; set; }
 
         [Newtonsoft.Json.JsonProperty("num_peers", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Num_peers { get; set; }
+        public long? Num_peers { get; set; }
 
         [Newtonsoft.Json.JsonProperty("channel_download", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? ChannelDownload { get; set; }
@@ -160,7 +160,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
     {
         /// <summary>Number of hops for the anonymous download. No hops is equivalent to a plain download</summary>
         [Newtonsoft.Json.JsonProperty("anon_hops", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Anon_hops { get; set; }
+        public long? Anon_hops { get; set; }
 
         /// <summary>Whether the seeding of the download should be anonymous or not</summary>
         [Newtonsoft.Json.JsonProperty("safe_seeding", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
@@ -209,7 +209,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
     {
         /// <summary>The anonymity of a download can be changed at runtime by passing the anon_hops parameter, however, this must be the only parameter in this request.</summary>
         [Newtonsoft.Json.JsonProperty("anon_hops", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Anon_hops { get; set; }
+        public long? Anon_hops { get; set; }
 
         [Newtonsoft.Json.JsonProperty("selected_files", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public System.Collections.Generic.ICollection<int> Selected_files { get; set; }
@@ -236,7 +236,7 @@ namespace NzbDrone.Core.Download.Clients.Tribler
         public long? Size { get; set; }
 
         [Newtonsoft.Json.JsonProperty("index", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public int? Index { get; set; }
+        public long? Index { get; set; }
 
         [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public string Name { get; set; }

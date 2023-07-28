@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading;
 using NzbDrone.Core.Parser.Model;
 
@@ -64,14 +65,16 @@ namespace NzbDrone.Core.Indexers.Tribler
             var channelQueue = new Queue<TriblerChannelSubscription>();
             var visitedChannels = new HashSet<TriblerChannelSubscription>();
 
-            StartRemoteQuery(settings, query);
+            var fts_query = SanitizeQuery(query);
+
+            StartRemoteQuery(settings, fts_query);
 
             // TODO: This could be replaced by starting to listen to events before remote query is triggered and then only wait for a few responses to come back.
             // If this delay is removed then the user usually has to do a search 2 times before getting results as the async responses do not get back before we look them up.
             Thread.Sleep(3000); // allow network queries to respond
 
             // first iterate the initial search.
-            foreach (var searchItem in _indexerProxy.Search(settings, query, maxRows))
+            foreach (var searchItem in _indexerProxy.Search(settings, fts_query, maxRows))
             {
                 switch (searchItem.Type)
                 {
@@ -128,6 +131,13 @@ namespace NzbDrone.Core.Indexers.Tribler
             }
 
             return torrentInfo;
+        }
+
+        public static string SanitizeQuery(string query)
+        {
+            var fts_reg = new Regex(@"[^\w]");
+            var fts_query = fts_reg.Replace(query, " ");
+            return fts_query;
         }
 
         private void ChannelNested(TriblerIndexerSettings settings, TriblerChannelSubscription channel, IList<ReleaseInfo> torrentInfo, ISet<TriblerChannelSubscription> visitedChannels, Queue<TriblerChannelSubscription> channelsToVisit)

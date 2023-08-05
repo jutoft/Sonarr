@@ -87,9 +87,13 @@ namespace NzbDrone.Core.Download.Clients.Tribler
 
                 if (download.Eta.HasValue)
                 {
-                    if (download.Eta.Value > long.MaxValue)
+                    if (download.Eta.Value >= TimeSpan.FromDays(365).TotalSeconds)
                     {
-                        item.RemainingTime = TimeSpan.MaxValue;
+                        item.RemainingTime = TimeSpan.FromDays(365);
+                    }
+                    else if (download.Eta.Value < 0)
+                    {
+                        item.RemainingTime = TimeSpan.FromSeconds(0);
                     }
                     else
                     {

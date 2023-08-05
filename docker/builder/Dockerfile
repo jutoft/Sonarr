@@ -48,6 +48,8 @@ RUN apk add --no-cache \
     xmlstarlet
 COPY --from=dotnetbuilder /app/_output/net6.0/linux-musl-x64 /app/sonarr/bin
 COPY --from=nodebuilder /app/_output/UI /app/sonarr/bin/UI
+# Symlink UI folder to parent dir to allow running in both Debug and Release mode
+RUN ln -s /app/sonarr/bin/UI /app/sonarr
 
 VOLUME /config
 CMD [ "/app/sonarr/bin/Sonarr", "-nobrowser", "-data=/config" ]

@@ -17,9 +17,6 @@ namespace NzbDrone.Core.Indexers.Tribler
         [Newtonsoft.Json.JsonProperty("tunnel_community", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public Tunnel_community Tunnel_community { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("market_community", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public Market_community Market_community { get; set; }
-
         [Newtonsoft.Json.JsonProperty("dht", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public Dht Dht { get; set; }
 
@@ -41,7 +38,8 @@ namespace NzbDrone.Core.Indexers.Tribler
         [Newtonsoft.Json.JsonProperty("version_checker_enabled", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Version_checker_enabled { get; set; }
 
-
+        [Newtonsoft.Json.JsonProperty("testnet", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Testnet { get; set; }
     }
 
 
@@ -54,30 +52,21 @@ namespace NzbDrone.Core.Indexers.Tribler
         [Newtonsoft.Json.JsonProperty("enabled", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Enabled { get; set; }
 
-        [Newtonsoft.Json.JsonProperty("socks5_listen_ports", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public System.Collections.Generic.ICollection<string> Socks5_listen_ports { get; set; }
-
         [Newtonsoft.Json.JsonProperty("random_slots", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public int? Random_slots { get; set; }
 
         [Newtonsoft.Json.JsonProperty("competing_slots", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public double? Competing_slots { get; set; }
+        public int? Competing_slots { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("min_circuits", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Min_Circuits { get; set; }
+
+        [Newtonsoft.Json.JsonProperty("max_circuits", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public int? Max_Circuits { get; set; }
 
         [Newtonsoft.Json.JsonProperty("testnet", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
         public bool? Testnet { get; set; }
-
-
     }
-
-    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.5.2.0 (Newtonsoft.Json v11.0.0.0)")]
-    public partial class Market_community
-    {
-        [Newtonsoft.Json.JsonProperty("enabled", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
-        public string Enabled { get; set; }
-
-
-    }
-
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "10.5.2.0 (Newtonsoft.Json v11.0.0.0)")]
     public partial class Dht
